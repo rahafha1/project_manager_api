@@ -42,7 +42,7 @@ class TaskViewSet(viewsets.ModelViewSet):
         ).distinct()
 
     def get_permissions(self):
-        if self.action in ['update', 'partial_update', 'destroy']:
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:  # ✅ تم إضافة 'create'
             permission_classes = [IsAuthenticated, IsTaskManagerOrAssignee]
         else:
             permission_classes = [IsAuthenticated]
@@ -50,6 +50,7 @@ class TaskViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         project = serializer.validated_data['project']
-        if project.manager != self.request.user:
-            raise PermissionDenied("Only the project manager can create tasks.")
+        # ✅ تم تعديل هذا الشرط ليسمح لأي عضو في المشروع أو المدير
+        if self.request.user != project.manager and self.request.user not in project.members.all():
+            raise PermissionDenied("Only the project manager or project members can create tasks.")
         serializer.save()

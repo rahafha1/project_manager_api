@@ -25,15 +25,19 @@ class IsTaskManagerOrAssignee(BasePermission):
         # ✅ السماح الكامل للمشرف المطلق
         if request.user.is_superuser:
             return True
+
+        project = obj.project
         
         if request.method in SAFE_METHODS:
-            # القراءة متاحة فقط للأعضاء في المشروع (المدير أو الأعضاء)
-            project = obj.project
+            # ✅ القراءة متاحة فقط للمدير أو الأعضاء
             return project.manager == request.user or request.user in project.members.all()
         
-        # التعديل والحذف للمدير أو المكلّف فقط
-        return obj.project.manager == request.user or obj.assigned_to == request.user
-
+        # ✅ التعديل أو الإنشاء متاح للمدير أو المكلّف أو أي عضو في المشروع
+        return (
+            project.manager == request.user or
+            obj.assigned_to == request.user or
+            request.user in project.members.all()  # ✅ ← هذا هو الإضافة الجديدة
+        )
 
 
 class IsAdminOrManager(BasePermission):
